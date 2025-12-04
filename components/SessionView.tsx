@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Persona } from '../types';
 import { useLiveSession } from '../hooks/useLiveSession';
 import Visualizer from './Visualizer';
+import TypingIndicator from './TypingIndicator';
 import { extractTextFromPdf } from '../utils/pdf';
 import { VOICES, LANGUAGES } from '../constants';
 
@@ -21,6 +22,10 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const [selectedVoice, setSelectedVoice] = useState<string>('Kore');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
+  // UI State for Thinking Indicator
+  const [isThinking, setIsThinking] = useState(false);
+  const lastVoiceActivityTime = useRef<number>(0);
+
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { isConnected, status, volume, connect, disconnect, isError } = useLiveSession({
@@ -31,6 +36,35 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     language: selectedLanguage,
     videoRef: persona.requiresCamera ? videoRef : undefined,
   });
+
+  // Heuristic for "Thinking" state
+  useEffect(() => {
+    const INPUT_THRESHOLD = 25; // User speech threshold
+    const OUTPUT_THRESHOLD = 15; // AI speech threshold
+    
+    const now = Date.now();
+    
+    // Check if user is speaking
+    if (volume.input > INPUT_THRESHOLD) {
+        lastVoiceActivityTime.current = now;
+        if (isThinking) setIsThinking(false);
+    } 
+    // Check if AI is speaking
+    else if (volume.output > OUTPUT_THRESHOLD) {
+        if (isThinking) setIsThinking(false);
+    } 
+    // Silence / Processing Gap
+    else {
+        // If we had recent voice activity (within 3s) and silence has persisted for >500ms
+        // we assume the AI is processing the response.
+        const timeSinceSpeech = now - lastVoiceActivityTime.current;
+        if (timeSinceSpeech > 500 && timeSinceSpeech < 3000 && isConnected) {
+             if (!isThinking) setIsThinking(true);
+        } else {
+             if (isThinking) setIsThinking(false);
+        }
+    }
+  }, [volume, isConnected, isThinking]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -247,9 +281,14 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
              <div className="h-px w-16 md:w-24 bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
 
              {/* AI Visualizer */}
-             <div className="flex flex-col items-center space-y-4">
+             <div className="flex flex-col items-center space-y-4 relative">
                 <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
                 <span className="text-sm font-medium text-gray-400">TalktoMeAI</span>
+                
+                {/* Typing Indicator Overlay */}
+                <div className={`absolute -bottom-14 transition-all duration-500 transform ${isThinking ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+                    <TypingIndicator />
+                </div>
              </div>
           </div>
 
