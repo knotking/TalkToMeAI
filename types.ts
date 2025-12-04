@@ -25,3 +25,18 @@ export interface AudioVolumeState {
   input: number;
   output: number;
 }
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+  timestamp: number;
+  isFinal?: boolean;
+}
+
+export interface SessionLog {
+  id: string;
+  personaId: PersonaId;
+  startTime: number;
+  endTime: number;
+  messages: ChatMessage[];
+}

@@ -3,6 +3,7 @@ import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { GEMINI_MODEL } from '../constants';
 import { createPcmBlob, decodeAudioData, base64ToUint8Array } from '../utils/audio';
 import { captureFrameAsBase64 } from '../utils/image';
+import { ChatMessage } from '../types';
 
 interface UseLiveSessionProps {
   systemInstruction: string;
@@ -25,6 +26,7 @@ export const useLiveSession = ({
   const [isError, setIsError] = useState(false);
   const [volume, setVolume] = useState({ input: 0, output: 0 });
   const [status, setStatus] = useState<string>('Ready');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // Audio Contexts and Nodes
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -103,6 +105,7 @@ export const useLiveSession = ({
     try {
       setStatus('Connecting...');
       setIsError(false);
+      setMessages([]); // Clear previous messages on new connection
 
       if (!process.env.API_KEY) {
         throw new Error("API Key not found");
@@ -174,6 +177,9 @@ export const useLiveSession = ({
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
           systemInstruction: fullInstruction,
+          // Enable transcription - using empty objects as per SDK requirements
+          inputAudioTranscription: { },
+          outputAudioTranscription: { },
         },
         callbacks: {
           onopen: () => {
@@ -208,7 +214,7 @@ export const useLiveSession = ({
                             }).catch(console.error);
                         }
                     }
-                }, 500); // 2 FPS to balance bandwidth and responsiveness
+                }, 500);
             }
           },
           onmessage: async (message: LiveServerMessage) => {
@@ -240,6 +246,59 @@ export const useLiveSession = ({
                 } catch (e) {
                     console.error("Error decoding audio", e);
                 }
+            }
+
+            // Handle Transcriptions
+            const inputTrans = message.serverContent?.inputTranscription;
+            const outputTrans = message.serverContent?.outputTranscription;
+
+            if (inputTrans) {
+                setMessages(prev => {
+                    const lastMsg = prev[prev.length - 1];
+                    if (lastMsg && lastMsg.role === 'user' && !lastMsg.isFinal) {
+                         const newMsgs = [...prev];
+                         newMsgs[newMsgs.length - 1] = {
+                             ...lastMsg,
+                             text: lastMsg.text + inputTrans.text
+                         };
+                         return newMsgs;
+                    } else {
+                         return [...prev, {
+                             role: 'user',
+                             text: inputTrans.text,
+                             timestamp: Date.now(),
+                             isFinal: false
+                         }];
+                    }
+                });
+            }
+
+            if (outputTrans) {
+                 setMessages(prev => {
+                    const lastMsg = prev[prev.length - 1];
+                    if (lastMsg && lastMsg.role === 'model' && !lastMsg.isFinal) {
+                         const newMsgs = [...prev];
+                         newMsgs[newMsgs.length - 1] = {
+                             ...lastMsg,
+                             text: lastMsg.text + outputTrans.text
+                         };
+                         return newMsgs;
+                    } else {
+                         return [...prev, {
+                             role: 'model',
+                             text: outputTrans.text,
+                             timestamp: Date.now(),
+                             isFinal: false
+                         }];
+                    }
+                });
+            }
+
+            // Handle Turn Complete (finalize messages)
+            if (message.serverContent?.turnComplete) {
+                setMessages(prev => prev.map((msg, idx) => 
+                    idx === prev.length - 1 ? { ...msg, isFinal: true } : msg
+                ));
             }
 
             // Handle Interruption
@@ -316,6 +375,7 @@ export const useLiveSession = ({
     status,
     volume,
     connect,
-    disconnect
+    disconnect,
+    messages
   };
 };

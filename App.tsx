@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { PERSONAS } from './constants';
 import PersonaCard from './components/PersonaCard';
 import SessionView from './components/SessionView';
+import HistoryModal from './components/HistoryModal';
 import { Persona } from './types';
 
 const App: React.FC = () => {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans selection:bg-purple-500 selection:text-white">
@@ -15,7 +17,16 @@ const App: React.FC = () => {
           onBack={() => setSelectedPersona(null)} 
         />
       ) : (
-        <div className="container mx-auto px-4 py-12 max-w-6xl">
+        <div className="container mx-auto px-4 py-12 max-w-6xl relative">
+          {/* History Button */}
+          <button 
+            onClick={() => setShowHistory(true)}
+            className="absolute top-4 right-4 md:top-12 md:right-8 flex items-center space-x-2 text-gray-400 hover:text-white transition-colors bg-gray-800/50 hover:bg-gray-800 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700"
+          >
+             <span className="text-xl">📜</span>
+             <span className="hidden md:inline font-medium">History</span>
+          </button>
+
           <header className="text-center mb-16 space-y-4">
             <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg mb-4 animate-float">
                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
@@ -42,6 +53,8 @@ const App: React.FC = () => {
           <footer className="mt-20 text-center text-gray-600 text-sm">
              <p>Use a wired connection or headphones for the best audio experience.</p>
           </footer>
+
+          {showHistory && <HistoryModal onClose={() => setShowHistory(false)} />}
         </div>
       )}
     </div>
