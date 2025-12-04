@@ -1,0 +1,8 @@
+{
+  "name": "TalktoMeAI",
+  "description": "Real-time voice conversations with specialized AI personas including a Lawyer, Interviewer, Psychologist, and Spiritual Master using Gemini 2.5 Live API.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
