@@ -43,7 +43,7 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          <header className="text-center mb-12 space-y-4">
+          <header className="text-center mb-8 space-y-4">
             <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg mb-4 animate-float">
                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
             </div>
@@ -55,7 +55,7 @@ const App: React.FC = () => {
             </p>
           </header>
 
-          <div className="w-full max-w-lg mx-auto bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-700 shadow-2xl relative">
+          <div className="w-full max-w-lg mx-auto bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-700 shadow-2xl relative z-10">
              <div className="mb-8">
                  <Dropdown 
                     label="Select a Persona"
@@ -102,6 +102,25 @@ const App: React.FC = () => {
              </div>
           </div>
           
+          {/* How It Works Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-12 animate-fade-in opacity-0" style={{ animationFillMode: 'forwards', animationDelay: '0.3s' }}>
+              <div className="bg-gray-800/30 p-5 rounded-xl border border-gray-700/50 backdrop-blur-sm text-center hover:bg-gray-800/50 transition-colors duration-300">
+                  <div className="text-3xl mb-3 bg-gray-900/50 w-12 h-12 mx-auto flex items-center justify-center rounded-full shadow-inner">🎭</div>
+                  <h3 className="font-bold text-white mb-2 text-sm uppercase tracking-wide">1. Select Persona</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed">Choose an expert agent tailored to your needs, from Lawyers to Chefs.</p>
+              </div>
+              <div className="bg-gray-800/30 p-5 rounded-xl border border-gray-700/50 backdrop-blur-sm text-center hover:bg-gray-800/50 transition-colors duration-300">
+                  <div className="text-3xl mb-3 bg-gray-900/50 w-12 h-12 mx-auto flex items-center justify-center rounded-full shadow-inner">📂</div>
+                  <h3 className="font-bold text-white mb-2 text-sm uppercase tracking-wide">2. Add Context</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed">Upload documents or enable your camera to give the AI eyes on your world.</p>
+              </div>
+              <div className="bg-gray-800/30 p-5 rounded-xl border border-gray-700/50 backdrop-blur-sm text-center hover:bg-gray-800/50 transition-colors duration-300">
+                  <div className="text-3xl mb-3 bg-gray-900/50 w-12 h-12 mx-auto flex items-center justify-center rounded-full shadow-inner">🎙️</div>
+                  <h3 className="font-bold text-white mb-2 text-sm uppercase tracking-wide">3. Start Talking</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed">Speak naturally. The AI listens, thinks, and responds instantly.</p>
+              </div>
+          </div>
+
           <footer className="mt-12 text-center text-gray-600 text-sm">
              <p>Powered by Gemini 2.5 Live API</p>
           </footer>
