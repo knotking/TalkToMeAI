@@ -1,50 +1,77 @@
 # TalktoMeAI
 
-**TalktoMeAI** is a cutting-edge web application that enables real-time, low-latency voice conversations with specialized AI personas. Powered by Google's **Gemini 2.5 Live API**, it transforms standard text-based AI interactions into immersive, bidirectional audio (and video) experiences.
+**TalktoMeAI** is a cutting-edge web application that transforms standard AI interactions into immersive, real-time voice conversations. Powered by Google's **Gemini 2.5 Live API**, it enables users to speak naturally with specialized AI personas that listen, think, and respond with human-like intonation and sub-second latency.
+
+Whether you need legal perspective on a contract, a fitness coach to motivate your workout, or a chef to help you cook dinner using your camera, TalktoMeAI provides a multimodal experience (Audio, Video, and Text) tailored to your needs.
 
 ## 🚀 Key Features
 
 ### 🎭 Specialized Personas
-Users can choose from a variety of pre-configured agents, each designed for specific use cases:
-*   **AI Lawyer**: Analyzes uploaded contracts/legal docs and provides preliminary perspectives.
-*   **AI Interviewer**: Conducts mock job interviews based on uploaded Resumes/CVs.
-*   **AI Handyman**: Uses the device camera to visually inspect household issues and offer DIY advice.
-*   **Psychologist & Spiritual Master**: Provides empathetic support and philosophical guidance.
-*   **Custom Agent**: Allows users to define their own system prompts for unique roleplay scenarios.
+Choose from a diverse range of expert agents, each pre-configured with unique system instructions and capabilities:
+
+*   **Professional & Educational**:
+    *   **⚖️ AI Lawyer**: Upload legal documents (PDF/Text) for preliminary analysis and discussion.
+    *   **💼 AI Interviewer**: Upload your resume to practice for job interviews with a tough but fair recruiter.
+    *   **🎓 AI Teacher**: A patient tutor ready to explain complex topics in simple terms.
+    *   **🏡 Real Estate Agent**: Expert advice on property trends, buying, and selling.
+
+*   **Lifestyle & Hobbyist**:
+    *   **👨‍🍳 AI Sous Chef**: Uses your **camera** to see ingredients and guide your cooking in real-time.
+    *   **💪 Fitness Coach**: High-energy motivation and workout planning.
+    *   **🛠️ AI Handyman**: Uses your **camera** to inspect household repairs and offer DIY solutions.
+    *   **🌍 Travel Guide**: Plan dream vacations and explore local cultures.
+
+*   **Personal & Wellness**:
+    *   **🧠 AI Psychologist**: Empathetic, non-judgmental support for exploring your thoughts and feelings.
+    *   **🧘 Spiritual Master**: Wisdom from various traditions to guide you toward inner peace.
+    *   **💘 Dating Coach**: Advice on profiles, texting, and relationships.
+    *   **✨ Custom Agent**: Create your own persona by writing a custom prompt.
 
 ### ⚡ Real-Time Interaction
-*   **Live Audio Streaming**: Utilizes the Web Audio API to stream 16kHz audio input and play back 24kHz audio output with minimal latency.
-*   **Multimodal Input**: Supports text, audio, and video (frame-by-frame streaming) inputs simultaneously.
-*   **Reactive Visualizers**: Displays dynamic audio visualizations for both user input and AI output to indicate activity and connection status.
+*   **Bidirectional Audio**: True full-duplex communication allowing for natural interruptions and pacing.
+*   **Video & Vision**: Capabilities to stream video frames to the model, allowing personas like the Chef and Handyman to "see" your environment.
+*   **Volume Control**: Integrated input (Microphone) and output (Speaker) gain controls to adjust audio levels on the fly.
+*   **Reactive Visualizers**: Dynamic audio visualizations that respond to voice activity for both the user and the AI.
 
-### 📂 Context Management
-*   **File Injection**: Integrates `pdfjs-dist` to parse PDF and text files, injecting content directly into the model's context window.
-*   **Session History**: Automatically saves conversation transcripts to local storage. Users can search, filter, and download transcripts as `.txt` files.
+### 📂 Context & History
+*   **File Injection**: Drag-and-drop support for PDF and text files (`.txt`, `.md`, `.json`, `.csv`) to give the AI specific context.
+*   **Session History**: Automatically saves conversation transcripts locally.
+*   **Export**: Download transcripts as `.txt` files for your records.
 
 ### ⚙️ Customization
-*   **Voice Selection**: Choose from 5 distinct Google TTS voices (Puck, Charon, Kore, Fenrir, Zephyr).
-*   **Language Support**: Multilingual support including English, Spanish, French, German, and more.
+*   **Voice Selection**: Toggle between 5 distinct Google TTS voices (Puck, Charon, Kore, Fenrir, Zephyr).
+*   **Language Support**: Converse in multiple languages including English, Spanish, French, German, Japanese, and more.
 
 ## 🛠 Technical Stack
 
-*   **Frontend**: React 19, TypeScript
-*   **Styling**: Tailwind CSS (Dark mode, responsive design, custom animations)
-*   **AI Engine**: `@google/genai` SDK (targeting `gemini-2.5-flash-native-audio-preview`)
-*   **Audio**: Custom `AudioContext` implementation for raw PCM encoding/decoding and buffer management.
-*   **PDF Processing**: `pdfjs-dist` for client-side text extraction.
+This project is built as a showcase of the Gemini 2.5 Live API capabilities.
+
+*   **Frontend Framework**: React 19 + TypeScript
+*   **Styling**: Tailwind CSS with custom animations (fade-ins, floating effects).
+*   **AI Engine**: `@google/genai` SDK targeting the `gemini-2.5-flash-native-audio-preview` model.
+*   **Audio Pipeline**: Custom Web Audio API implementation:
+    *   `ScriptProcessorNode` for capturing raw PCM input (16kHz).
+    *   `AudioBufferSourceNode` for scheduling gapless playback of received audio chunks (24kHz).
+    *   `GainNode` for real-time volume adjustment.
+    *   `AnalyserNode` for driving the visualizers.
+*   **Video Processing**: HTML5 Canvas for capturing video frames and converting them to base64 for the model.
+*   **Document Processing**: `pdfjs-dist` for client-side text extraction from PDFs.
 
 ## 📂 Project Structure
 
-*   **`App.tsx`**: Main entry point handling navigation and persona selection.
-*   **`hooks/useLiveSession.ts`**: The core logic hook managing WebSocket connections, audio processing, video capture, and message handling.
-*   **`components/SessionView.tsx`**: The active call interface, handling file uploads and media permissions.
-*   **`utils/audio.ts`**: Utilities for `base64` conversion and PCM audio blob creation.
-*   **`utils/storage.ts`**: LocalStorage wrappers for session persistence.
+*   **`App.tsx`**: Main entry point, navigation, and persona selection.
+*   **`hooks/useLiveSession.ts`**: Core logic hook managing the WebSocket connection, audio/video streaming, volume gain, and state.
+*   **`components/SessionView.tsx`**: The active call interface with visualizers, controls, and chat logs.
+*   **`components/Visualizer.tsx`**: Canvas-free, CSS-based reactive audio visualizers.
+*   **`utils/audio.ts`**: Low-level audio encoding/decoding utilities.
+*   **`constants.ts`**: Configuration for personas, voices, and languages.
 
 ## 🔑 Setup & Requirements
 
-The application requires a valid Google GenAI API Key with access to the Gemini 2.5 Live API.
+1.  **API Key**: This application requires a valid Google GenAI API Key with access to the Gemini 2.5 Live API. The key is injected via `process.env.API_KEY`.
+2.  **Hardware Permissions**:
+    *   **Microphone**: Required for all personas.
+    *   **Camera**: Specifically required for "Vision" personas (Chef, Handyman, etc.).
 
-1.  The API Key is injected via `process.env.API_KEY`.
-2.  Microphone permissions are required for all personas.
-3.  Camera permissions are specifically required for the **Handyman** persona.
+---
+*Powered by Gemini 2.5 Flash Native Audio*
