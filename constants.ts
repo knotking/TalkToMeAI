@@ -23,6 +23,16 @@ export const LANGUAGES = [
 
 export const PERSONAS: Persona[] = [
   {
+    id: PersonaId.CUSTOM,
+    title: 'Custom Agent',
+    description: 'Design your own persona by writing a custom system instruction.',
+    icon: '✨',
+    color: 'from-gray-500 to-slate-600',
+    requiresFile: false,
+    allowCustomPrompt: true,
+    systemInstruction: '', 
+  },
+  {
     id: PersonaId.LAWYER,
     title: 'AI Lawyer',
     description: 'Discuss legal documents and get preliminary legal perspectives.',

@@ -16,6 +16,7 @@ interface SessionViewProps {
 const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const [fileContent, setFileContent] = useState<string>('');
   const [textInput, setTextInput] = useState<string>('');
+  const [customSystemInstruction, setCustomSystemInstruction] = useState<string>(persona.systemInstruction);
   const [fileName, setFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [setupComplete, setSetupComplete] = useState<boolean>(false);
@@ -33,6 +34,11 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const sessionStartTimeRef = useRef<number>(0);
 
+  // Update instruction when persona changes
+  useEffect(() => {
+    setCustomSystemInstruction(persona.systemInstruction);
+  }, [persona]);
+
   // Load Preferences on Mount
   useEffect(() => {
     const prefs = getPersonaPreference(persona.id);
@@ -43,7 +49,7 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   }, [persona.id]);
 
   const { isConnected, status, volume, connect, disconnect, isError, messages } = useLiveSession({
-    systemInstruction: persona.systemInstruction,
+    systemInstruction: customSystemInstruction, // Use dynamic instruction
     initialContext: fileContent,
     additionalContext: textInput,
     voiceName: selectedVoice,
@@ -141,6 +147,11 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     const voiceOptions = VOICES.map(v => ({ value: v.name, label: v.label }));
     const languageOptions = LANGUAGES.map(l => ({ value: l, label: l }));
 
+    // Validation for start button
+    const isCustomPromptEmpty = persona.allowCustomPrompt && !customSystemInstruction.trim();
+    const isFileMissing = persona.requiresFile && !fileContent;
+    const isStartDisabled = isFileMissing || isCustomPromptEmpty || isProcessing;
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 md:p-8 max-w-4xl mx-auto animate-float">
         <button onClick={onBack} className="absolute top-8 left-8 text-gray-400 hover:text-white flex items-center">
@@ -159,6 +170,20 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column: Context Inputs */}
                 <div className="space-y-4">
+                    {persona.allowCustomPrompt && (
+                        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                System Instruction
+                            </label>
+                            <textarea
+                                value={customSystemInstruction}
+                                onChange={(e) => setCustomSystemInstruction(e.target.value)}
+                                placeholder="E.g., You are a futuristic tour guide leading a tour of Mars. Be enthusiastic and describe the scenery vividly."
+                                className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 h-32 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-500 resize-none"
+                            />
+                        </div>
+                    )}
+
                     {persona.requiresFile && (
                         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -206,7 +231,7 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                     )}
                     
                     {/* Placeholder for left column if no inputs needed, or just let grid handle it */}
-                    {!persona.requiresFile && !persona.textInputLabel && !persona.requiresCamera && (
+                    {!persona.requiresFile && !persona.textInputLabel && !persona.requiresCamera && !persona.allowCustomPrompt && (
                         <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 flex items-center justify-center text-gray-500 italic h-full">
                             No additional context required for this persona.
                         </div>
@@ -238,10 +263,10 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
         </div>
 
         <button 
-            disabled={(persona.requiresFile && !fileContent) || isProcessing}
+            disabled={isStartDisabled}
             onClick={handleStart}
             className={`mt-8 py-3 px-8 rounded-full font-bold text-lg shadow-lg transition-all transform hover:scale-105 ${
-                (!persona.requiresFile || fileContent) && !isProcessing
+                !isStartDisabled
                 ? `bg-gradient-to-r ${persona.color} text-white` 
                 : 'bg-gray-700 text-gray-500 cursor-not-allowed'
             }`}

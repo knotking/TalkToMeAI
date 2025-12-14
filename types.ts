@@ -7,6 +7,7 @@ export enum PersonaId {
   TEACHER = 'teacher',
   HANDYMAN = 'handyman',
   DATING_COACH = 'dating_coach',
+  CUSTOM = 'custom',
 }
 
 export interface Persona {
@@ -20,6 +21,7 @@ export interface Persona {
   fileLabel?: string;
   requiresCamera?: boolean;
   textInputLabel?: string;
+  allowCustomPrompt?: boolean;
 }
 
 export interface AudioVolumeState {
