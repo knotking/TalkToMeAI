@@ -3,7 +3,7 @@ import { Persona, SessionLog } from '../types';
 import { useLiveSession } from '../hooks/useLiveSession';
 import Visualizer from './Visualizer';
 import TypingIndicator from './TypingIndicator';
-import Dropdown from './Dropdown'; // Import the new Dropdown component
+import Dropdown from './Dropdown';
 import { extractTextFromPdf } from '../utils/pdf';
 import { VOICES, LANGUAGES } from '../constants';
 import { saveSession, getPersonaPreference, savePersonaPreference, generateId } from '../utils/storage';
@@ -25,9 +25,10 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const [selectedVoice, setSelectedVoice] = useState<string>('Kore');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
-  // Volume State
+  // Controls State
   const [micVolume, setMicVolume] = useState<number>(1.0);
   const [speakerVolume, setSpeakerVolume] = useState<number>(1.0);
+  const [isCameraOn, setIsCameraOn] = useState<boolean>(persona.requiresCamera || false);
 
   // UI State for Thinking Indicator
   const [isThinking, setIsThinking] = useState(false);
@@ -53,14 +54,15 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   }, [persona.id]);
 
   const { isConnected, status, volume, connect, disconnect, isError, messages } = useLiveSession({
-    systemInstruction: customSystemInstruction, // Use dynamic instruction
+    systemInstruction: customSystemInstruction,
     initialContext: fileContent,
     additionalContext: textInput,
     voiceName: selectedVoice,
     language: selectedLanguage,
-    videoRef: persona.requiresCamera ? videoRef : undefined,
+    videoRef: videoRef, // Always pass ref, hook handles enabling/disabling
     inputVolume: micVolume,
     outputVolume: speakerVolume,
+    isVideoEnabled: isCameraOn,
   });
 
   // Scroll chat to bottom on new message
@@ -94,7 +96,6 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
 
   // Handle Start
   const handleStart = () => {
-    // Save preferences
     savePersonaPreference(persona.id, {
         voiceName: selectedVoice,
         language: selectedLanguage
@@ -126,14 +127,13 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     if (file) {
       setFileName(file.name);
       setIsProcessing(true);
-      setFileContent(''); // Clear previous content while processing
+      setFileContent('');
 
       try {
         if (file.type === 'application/pdf') {
           const text = await extractTextFromPdf(file);
           setFileContent(text);
         } else {
-          // Default text handling
           const text = await file.text();
           setFileContent(text);
         }
@@ -149,11 +149,10 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
 
 
   if (!setupComplete) {
-    // Prepare options for Dropdowns
+    // ... (Setup screen code remains the same as before) ...
     const voiceOptions = VOICES.map(v => ({ value: v.name, label: v.label }));
     const languageOptions = LANGUAGES.map(l => ({ value: l, label: l }));
 
-    // Validation for start button
     const isCustomPromptEmpty = persona.allowCustomPrompt && !customSystemInstruction.trim();
     const isFileMissing = persona.requiresFile && !fileContent;
     const isStartDisabled = isFileMissing || isCustomPromptEmpty || isProcessing;
@@ -174,7 +173,6 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
         
         <div className="w-full space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column: Context Inputs */}
                 <div className="space-y-4">
                     {persona.allowCustomPrompt && (
                         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
@@ -228,15 +226,14 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                     )}
 
                     {persona.requiresCamera && (
-                        <div className="bg-orange-900/30 border border-orange-700 rounded-xl p-4 flex items-start">
+                         <div className="bg-orange-900/30 border border-orange-700 rounded-xl p-4 flex items-start">
                              <svg className="w-5 h-5 text-orange-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                              <p className="text-sm text-orange-200">
-                                 This persona requires access to your camera to see what you are showing. Please allow camera permissions when prompted.
+                                 This persona works best with visual input. Camera will be enabled by default.
                              </p>
                         </div>
                     )}
                     
-                    {/* Placeholder for left column if no inputs needed, or just let grid handle it */}
                     {!persona.requiresFile && !persona.textInputLabel && !persona.requiresCamera && !persona.allowCustomPrompt && (
                         <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 flex items-center justify-center text-gray-500 italic h-full">
                             No additional context required for this persona.
@@ -244,7 +241,6 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                     )}
                 </div>
 
-                {/* Right Column: Configuration (Voice & Language) */}
                 <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 space-y-6">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                         <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -283,141 +279,99 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     );
   }
 
+  // Active Session Layout
   return (
-    <div className="flex flex-col h-full relative">
-       {/* Header */}
-       <div className="flex-shrink-0 w-full p-4 md:p-6 flex justify-between items-center bg-gray-900 border-b border-gray-800 z-10">
-         <button onClick={handleDisconnect} className="text-gray-400 hover:text-white flex items-center transition-colors bg-gray-800 rounded-full px-4 py-2 hover:bg-gray-700">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            End & Save
-         </button>
-         <div className="flex items-center space-x-2 bg-gray-800 rounded-full px-4 py-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-            <span className="text-sm font-medium text-gray-300">{status}</span>
-         </div>
-       </div>
-
-       <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
+    <div className="flex flex-col h-full relative bg-gray-900">
+       
+       {/* Main Stage Area */}
+       <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative">
            
-           {/* Visualizer Area */}
-           <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-4 bg-gray-900 overflow-y-auto">
-              <div className="text-center space-y-2">
-                 <div className={`inline-block p-4 rounded-full bg-gray-800/50 backdrop-blur border border-gray-700 mb-2`}>
-                    <span className="text-5xl md:text-6xl">{persona.icon}</span>
-                 </div>
-                 <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{persona.title}</h2>
-                 <div className="flex flex-wrap gap-2 justify-center">
-                     {fileName && (
-                         <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-xs text-gray-400">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            {fileName}
-                         </div>
-                     )}
-                     <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-xs text-gray-400">
-                        <span className="mr-1">🗣️</span> {selectedVoice}
-                     </div>
-                 </div>
+           {/* Visualizer / Video Area */}
+           <div className={`flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden transition-all duration-500 ${isCameraOn ? 'bg-black' : 'bg-gray-900'}`}>
+              
+              {/* Persona Info Overlay (Top Left) */}
+              <div className="absolute top-4 left-4 z-20 flex items-center space-x-3 bg-gray-900/60 backdrop-blur-md p-2 rounded-full border border-gray-700/50">
+                   <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${persona.color} flex items-center justify-center text-lg`}>
+                       {persona.icon}
+                   </div>
+                   <div className="pr-3">
+                       <h2 className="text-sm font-bold text-white leading-none">{persona.title}</h2>
+                       <div className="flex items-center space-x-2 mt-0.5">
+                           <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                           <span className="text-[10px] text-gray-400 font-mono uppercase">{status}</span>
+                       </div>
+                   </div>
               </div>
-
-              <div className="flex items-center justify-center space-x-8 md:space-x-12 w-full max-w-4xl px-4">
-                 {/* User Visualizer / Camera */}
-                 <div className="flex flex-col items-center space-y-4 relative">
-                    {persona.requiresCamera ? (
-                        <div className="relative w-48 h-36 md:w-64 md:h-48 bg-black rounded-lg overflow-hidden border-2 border-gray-700 shadow-2xl">
-                            <video 
-                                ref={videoRef} 
-                                className={`w-full h-full object-cover transform scale-x-[-1] ${!isConnected ? 'opacity-50' : ''}`}
-                                autoPlay 
-                                playsInline 
-                                muted 
-                            />
-                             {!isConnected && (
-                                 <div className="absolute inset-0 flex items-center justify-center text-gray-500">
-                                     <span className="text-3xl">📷</span>
-                                 </div>
+              
+              {/* Central Visual Layout */}
+              {isCameraOn ? (
+                   // Video Call Layout
+                   <div className="w-full h-full relative flex items-center justify-center">
+                        <video 
+                            ref={videoRef} 
+                            className="w-full h-full object-cover transform scale-x-[-1]"
+                            autoPlay 
+                            playsInline 
+                            muted 
+                        />
+                        {/* AI Overlay on Video */}
+                        <div className="absolute top-4 right-4 md:bottom-8 md:right-8 bg-gray-900/80 backdrop-blur-md rounded-2xl p-4 border border-gray-700/50 shadow-2xl flex flex-col items-center z-10 w-32 md:w-48 transition-all">
+                             <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
+                             {isThinking && (
+                                <div className="mt-2 scale-75">
+                                    <TypingIndicator />
+                                </div>
                              )}
-                             <div className="absolute bottom-2 right-2 flex space-x-1">
-                                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                                 <span className="text-[10px] text-white font-mono">LIVE</span>
+                        </div>
+                   </div>
+              ) : (
+                   // Standard Audio Layout
+                   <div className="flex flex-col items-center justify-center space-y-12 w-full max-w-4xl px-4 z-10">
+                        {/* AI Avatar */}
+                        <div className="relative group">
+                             <div className={`absolute -inset-4 bg-gradient-to-r ${persona.color} opacity-20 rounded-full blur-2xl group-hover:opacity-30 transition-opacity duration-500`}></div>
+                             <div className="flex flex-col items-center space-y-6 relative">
+                                <div className="transform scale-150">
+                                    <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
+                                </div>
+                                
+                                <div className={`h-6 transition-all duration-300 ${isThinking ? 'opacity-100' : 'opacity-0'}`}>
+                                    <TypingIndicator />
+                                </div>
                              </div>
                         </div>
-                    ) : (
-                        <Visualizer volume={volume.input} isActive={isConnected} color="from-gray-500 to-gray-600" />
-                    )}
-                    <span className="text-sm font-medium text-gray-400">You</span>
-                 </div>
 
-                 {/* Connection Status / Divider */}
-                 <div className="hidden md:block h-px w-16 md:w-24 bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
-
-                 {/* AI Visualizer */}
-                 <div className="flex flex-col items-center space-y-4 relative">
-                    <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
-                    <span className="text-sm font-medium text-gray-400">TalktoMeAI</span>
-                    
-                    {/* Typing Indicator Overlay */}
-                    <div className={`absolute -bottom-14 transition-all duration-500 transform ${isThinking ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
-                        <TypingIndicator />
-                    </div>
-                 </div>
-              </div>
-
-              {/* Volume Controls */}
-              <div className="w-full max-w-sm bg-gray-800/40 rounded-xl p-3 border border-gray-700/50 backdrop-blur-sm mt-4">
-                 <div className="grid grid-cols-2 gap-4">
-                     {/* Input Volume */}
-                     <div className="flex flex-col space-y-1">
-                         <div className="flex items-center justify-between text-xs text-gray-400">
-                             <div className="flex items-center"><span className="mr-1">🎤</span> Input</div>
-                             <span>{Math.round(micVolume * 100)}%</span>
-                         </div>
-                         <input 
-                            type="range" min="0" max="2" step="0.1" 
-                            value={micVolume}
-                            onChange={(e) => setMicVolume(parseFloat(e.target.value))}
-                            className="w-full h-1.5 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                         />
-                     </div>
-                     {/* Output Volume */}
-                     <div className="flex flex-col space-y-1">
-                         <div className="flex items-center justify-between text-xs text-gray-400">
-                            <div className="flex items-center"><span className="mr-1">🔊</span> Output</div>
-                             <span>{Math.round(speakerVolume * 100)}%</span>
-                         </div>
-                         <input 
-                            type="range" min="0" max="2" step="0.1" 
-                            value={speakerVolume}
-                            onChange={(e) => setSpeakerVolume(parseFloat(e.target.value))}
-                            className="w-full h-1.5 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
-                         />
-                     </div>
-                 </div>
-              </div>
-
+                        {/* User Mic Visualizer */}
+                        <div className="flex flex-col items-center space-y-2 opacity-60">
+                            <Visualizer volume={volume.input} isActive={isConnected} color="from-gray-500 to-gray-600" />
+                            <span className="text-sm font-medium text-gray-400 tracking-widest uppercase text-xs">Listening</span>
+                        </div>
+                   </div>
+              )}
+              
               {isError && (
-                 <div className="bg-red-900/50 border border-red-500 text-red-200 px-6 py-4 rounded-xl max-w-md text-center">
-                    <p>Connection failed. Please ensure your microphone {persona.requiresCamera ? 'and camera' : ''} are enabled and try again.</p>
-                    <button onClick={connect} className="mt-2 text-sm underline hover:text-white">Retry Connection</button>
+                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-900/90 border border-red-500 text-white px-6 py-4 rounded-xl max-w-md text-center z-50 backdrop-blur-sm shadow-2xl">
+                    <p className="font-bold mb-2">Connection Error</p>
+                    <p className="text-sm text-red-200">Please check your internet connection and permissions.</p>
+                    <button onClick={connect} className="mt-4 bg-white text-red-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-100">Retry</button>
                  </div>
               )}
            </div>
 
-           {/* Chat Log Area */}
-           <div className="w-full md:w-80 lg:w-96 bg-gray-800 border-l border-gray-700 flex flex-col h-1/2 md:h-auto">
-               <div className="p-4 border-b border-gray-700 font-semibold text-gray-300">
-                   Transcript
+           {/* Transcript Sidebar (Hidden on mobile unless toggled, handled via simple responsive width for now) */}
+           <div className="hidden lg:flex w-80 bg-gray-950 border-l border-gray-800 flex-col z-20">
+               <div className="p-4 border-b border-gray-800 font-semibold text-gray-400 text-xs uppercase tracking-wider flex justify-between items-center">
+                   <span>Transcript</span>
+                   {fileName && <span className="text-[10px] bg-gray-800 px-2 py-1 rounded text-blue-300 truncate max-w-[100px]">{fileName}</span>}
                </div>
                <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4">
-                   {messages.length === 0 && (
-                       <p className="text-center text-gray-500 text-sm mt-10 italic">Conversation will appear here...</p>
-                   )}
                    {messages.map((msg, idx) => (
                        <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                            <div 
                                className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm ${
                                    msg.role === 'user' 
                                    ? 'bg-blue-600 text-white rounded-br-none' 
-                                   : 'bg-gray-700 text-gray-200 rounded-bl-none'
+                                   : 'bg-gray-800 text-gray-300 rounded-bl-none border border-gray-700'
                                }`}
                            >
                                {msg.text}
@@ -427,15 +381,62 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                            </span>
                        </div>
                    ))}
-                   {isThinking && (
-                       <div className="flex flex-col items-start">
-                           <div className="bg-gray-700 px-4 py-2 rounded-2xl rounded-bl-none text-gray-400 text-sm italic">
-                               Thinking...
-                           </div>
-                       </div>
-                   )}
                </div>
            </div>
+       </div>
+
+       {/* Control Bar (Bottom) */}
+       <div className="bg-gray-900 border-t border-gray-800 p-4 z-30">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+              
+              {/* Volume Sliders (Hidden on small mobile) */}
+              <div className="hidden md:flex items-center space-x-6 w-1/3">
+                  <div className="flex items-center space-x-2 w-full">
+                       <span className="text-gray-500 text-xs">Mic</span>
+                       <input 
+                            type="range" min="0" max="2" step="0.1" 
+                            value={micVolume}
+                            onChange={(e) => setMicVolume(parseFloat(e.target.value))}
+                            className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                       />
+                  </div>
+                  <div className="flex items-center space-x-2 w-full">
+                       <span className="text-gray-500 text-xs">Vol</span>
+                       <input 
+                            type="range" min="0" max="2" step="0.1" 
+                            value={speakerVolume}
+                            onChange={(e) => setSpeakerVolume(parseFloat(e.target.value))}
+                            className="w-24 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+                       />
+                  </div>
+              </div>
+
+              {/* Main Controls */}
+              <div className="flex items-center justify-center space-x-4 flex-grow md:flex-grow-0">
+                   <button 
+                        onClick={() => setIsCameraOn(!isCameraOn)}
+                        className={`p-4 rounded-full transition-all duration-300 shadow-lg ${isCameraOn ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}
+                        title="Toggle Camera"
+                   >
+                       {isCameraOn ? (
+                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                       ) : (
+                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                       )}
+                   </button>
+                   
+                   <button 
+                        onClick={handleDisconnect}
+                        className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-full font-bold shadow-lg transform hover:scale-105 transition-all flex items-center"
+                   >
+                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" /></svg>
+                        End Call
+                   </button>
+              </div>
+
+               {/* Spacer for layout balance */}
+              <div className="hidden md:block w-1/3"></div>
+          </div>
        </div>
     </div>
   );

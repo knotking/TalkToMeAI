@@ -14,6 +14,7 @@ interface UseLiveSessionProps {
   videoRef?: React.RefObject<HTMLVideoElement | null>;
   inputVolume?: number;
   outputVolume?: number;
+  isVideoEnabled?: boolean;
 }
 
 export const useLiveSession = ({ 
@@ -25,6 +26,7 @@ export const useLiveSession = ({
   videoRef,
   inputVolume = 1.0,
   outputVolume = 1.0,
+  isVideoEnabled = false,
 }: UseLiveSessionProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -45,6 +47,7 @@ export const useLiveSession = ({
   // Video/Canvas State
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoIntervalRef = useRef<number | null>(null);
+  const videoStreamRef = useRef<MediaStream | null>(null);
   
   // State for playback scheduling
   const nextStartTimeRef = useRef<number>(0);
@@ -66,15 +69,95 @@ export const useLiveSession = ({
         outputNodeRef.current.gain.setTargetAtTime(outputVolume, outputAudioContextRef.current.currentTime, 0.1);
     }
   }, [outputVolume]);
+
+  // Manage Video Stream Dynamically
+  useEffect(() => {
+    let mounted = true;
+
+    const startVideo = async () => {
+        if (!isConnected || !isVideoEnabled || !videoRef?.current) return;
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 640, height: 480, facingMode: 'user' } 
+            });
+            
+            if (!mounted) {
+                stream.getTracks().forEach(t => t.stop());
+                return;
+            }
+
+            videoStreamRef.current = stream;
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+
+            if (!canvasRef.current) {
+                canvasRef.current = document.createElement('canvas');
+            }
+
+            // Start sending frames
+            videoIntervalRef.current = window.setInterval(() => {
+                if (videoRef.current && canvasRef.current && sessionPromiseRef.current) {
+                    const base64Image = captureFrameAsBase64(videoRef.current, canvasRef.current);
+                    if (base64Image) {
+                        sessionPromiseRef.current.then((session) => {
+                            session.sendRealtimeInput({ 
+                                media: { 
+                                    mimeType: 'image/jpeg', 
+                                    data: base64Image 
+                                } 
+                            });
+                        }).catch(console.error);
+                    }
+                }
+            }, 500); // Send frame every 500ms (2 FPS) to save bandwidth but maintain context
+
+        } catch (err) {
+            console.error("Failed to start video:", err);
+        }
+    };
+
+    const stopVideo = () => {
+        if (videoIntervalRef.current) {
+            clearInterval(videoIntervalRef.current);
+            videoIntervalRef.current = null;
+        }
+
+        if (videoStreamRef.current) {
+            videoStreamRef.current.getTracks().forEach(track => track.stop());
+            videoStreamRef.current = null;
+        }
+
+        if (videoRef?.current) {
+            videoRef.current.srcObject = null;
+        }
+    };
+
+    if (isVideoEnabled && isConnected) {
+        startVideo();
+    } else {
+        stopVideo();
+    }
+
+    return () => {
+        mounted = false;
+        stopVideo();
+    };
+  }, [isConnected, isVideoEnabled, videoRef]);
   
   const disconnect = useCallback(async () => {
-    // Stop video capture
+    // Stop video capture logic
     if (videoIntervalRef.current) {
         clearInterval(videoIntervalRef.current);
         videoIntervalRef.current = null;
     }
     
-    // Stop streams
+    if (videoStreamRef.current) {
+        videoStreamRef.current.getTracks().forEach(track => track.stop());
+        videoStreamRef.current = null;
+    }
+    
+    // Stop audio streams
     if (inputSourceRef.current) {
       const stream = inputSourceRef.current.mediaStream;
       stream.getTracks().forEach(track => track.stop());
@@ -83,12 +166,6 @@ export const useLiveSession = ({
     
     if (inputGainRef.current) {
         inputGainRef.current.disconnect();
-    }
-
-    if (videoRef?.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
     }
 
     if (processorRef.current) {
@@ -121,7 +198,7 @@ export const useLiveSession = ({
     setIsConnected(false);
     setStatus('Ready');
     setVolume({ input: 0, output: 0 });
-  }, [videoRef]);
+  }, []);
 
   const connect = useCallback(async () => {
     try {
@@ -146,25 +223,15 @@ export const useLiveSession = ({
       inputAnalyserRef.current.fftSize = 256;
       outputAnalyserRef.current.fftSize = 256;
 
-      // Determine Media Constraints
-      const hasVideo = !!videoRef;
+      // Audio Constraints (Video handled in separate effect)
       const constraints = {
         audio: true,
-        video: hasVideo ? { width: 640, height: 480, facingMode: 'environment' } : false
+        video: false
       };
 
-      // Get Media Stream (Audio + Video if requested)
+      // Get Audio Stream
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
-      // Handle Video Stream
-      if (hasVideo && videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        
-        // Initialize helper canvas for frame capture
-        canvasRef.current = document.createElement('canvas');
-      }
-
       // Input Pipeline (Audio)
       inputSourceRef.current = inputAudioContextRef.current.createMediaStreamSource(stream);
       inputGainRef.current = inputAudioContextRef.current.createGain();
@@ -204,7 +271,7 @@ export const useLiveSession = ({
             voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } },
           },
           systemInstruction: fullInstruction,
-          // Enable transcription - using empty objects as per SDK requirements
+          // Enable transcription
           inputAudioTranscription: { },
           outputAudioTranscription: { },
         },
@@ -223,25 +290,6 @@ export const useLiveSession = ({
                         session.sendRealtimeInput({ media: pcmBlob });
                     }).catch(console.error);
                 };
-            }
-
-            // Start video frame transmission if video is active
-            if (hasVideo && videoRef?.current && canvasRef.current) {
-                videoIntervalRef.current = window.setInterval(() => {
-                    if (videoRef.current && canvasRef.current) {
-                        const base64Image = captureFrameAsBase64(videoRef.current, canvasRef.current);
-                        if (base64Image) {
-                            sessionPromiseRef.current?.then((session) => {
-                                session.sendRealtimeInput({ 
-                                    media: { 
-                                        mimeType: 'image/jpeg', 
-                                        data: base64Image 
-                                    } 
-                                });
-                            }).catch(console.error);
-                        }
-                    }
-                }, 500);
             }
           },
           onmessage: async (message: LiveServerMessage) => {
@@ -354,7 +402,7 @@ export const useLiveSession = ({
       setStatus('Failed to Connect');
       disconnect();
     }
-  }, [systemInstruction, initialContext, additionalContext, voiceName, language, videoRef, disconnect, inputVolume, outputVolume]);
+  }, [systemInstruction, initialContext, additionalContext, voiceName, language, disconnect, inputVolume, outputVolume]);
 
   useEffect(() => {
     let animFrame: number;
