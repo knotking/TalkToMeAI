@@ -6,6 +6,7 @@ export enum PersonaId {
   REAL_ESTATE = 'real_estate',
   TEACHER = 'teacher',
   HANDYMAN = 'handyman',
+  DATING_COACH = 'dating_coach',
 }
 
 export interface Persona {
