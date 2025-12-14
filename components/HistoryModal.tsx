@@ -10,6 +10,7 @@ interface HistoryModalProps {
 const HistoryModal: React.FC<HistoryModalProps> = ({ onClose }) => {
   const [sessions, setSessions] = useState<SessionLog[]>([]);
   const [selectedSession, setSelectedSession] = useState<SessionLog | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setSessions(getSessions());
@@ -44,6 +45,36 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ onClose }) => {
       return `${min}m ${sec % 60}s`;
   };
 
+  const handleDownload = () => {
+    if (!selectedSession) return;
+    const persona = getPersonaDetails(selectedSession.personaId);
+    const dateStr = new Date(selectedSession.startTime).toISOString().split('T')[0];
+    const filename = `transcript_${persona?.title.replace(/\s+/g, '_')}_${dateStr}.txt`;
+    
+    const content = selectedSession.messages.map(m => {
+        const role = m.role === 'user' ? 'You' : (persona?.title || 'AI');
+        return `[${new Date(m.timestamp).toLocaleTimeString()}] ${role}: ${m.text}`;
+    }).join('\n\n');
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Filter logic
+  const filteredSessions = sessions.filter(s => {
+    const persona = getPersonaDetails(s.personaId);
+    const title = persona?.title || '';
+    const content = s.messages.map(m => m.text).join(' ');
+    const searchLower = searchTerm.toLowerCase();
+    
+    return title.toLowerCase().includes(searchLower) || content.toLowerCase().includes(searchLower);
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="bg-gray-900 w-full max-w-4xl h-[80vh] rounded-2xl border border-gray-700 shadow-2xl flex flex-col overflow-hidden relative animate-float" style={{ animationDuration: '0s' }}>
@@ -71,14 +102,27 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ onClose }) => {
         {/* Content */}
         <div className="flex-grow flex overflow-hidden">
             {/* Sidebar List */}
-            <div className="w-full md:w-1/3 border-r border-gray-800 overflow-y-auto">
-                {sessions.length === 0 ? (
+            <div className="w-full md:w-1/3 border-r border-gray-800 overflow-y-auto flex flex-col">
+                <div className="p-4 border-b border-gray-800 bg-gray-900 sticky top-0 z-10">
+                    <div className="relative">
+                        <input 
+                            type="text" 
+                            placeholder="Search transcripts..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-gray-500"
+                        />
+                        <svg className="w-4 h-4 text-gray-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                </div>
+
+                {filteredSessions.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
-                        No history found. Start a conversation to save it here.
+                        {sessions.length === 0 ? 'No history found.' : 'No matches found.'}
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-800">
-                        {sessions.map(session => {
+                        {filteredSessions.map(session => {
                             const persona = getPersonaDetails(session.personaId);
                             return (
                                 <div 
@@ -117,8 +161,16 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ onClose }) => {
             <div className="hidden md:flex flex-col flex-1 bg-gray-950">
                 {selectedSession ? (
                     <>
-                         <div className="p-4 bg-gray-900 border-b border-gray-800 text-center">
-                             <h3 className="font-semibold text-gray-300">Transcript</h3>
+                         <div className="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
+                             <h3 className="font-semibold text-gray-300 ml-2">Transcript</h3>
+                             <button 
+                                onClick={handleDownload}
+                                className="flex items-center space-x-2 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg transition-colors border border-gray-700"
+                                title="Download as .txt"
+                             >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                <span>Download</span>
+                             </button>
                          </div>
                          <div className="flex-grow overflow-y-auto p-6 space-y-6">
                             {selectedSession.messages.map((msg, idx) => (
@@ -149,16 +201,24 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ onClose }) => {
                 )}
             </div>
             
-            {/* Mobile View Overlay for selected session (simplified) */}
+            {/* Mobile View Overlay */}
             {selectedSession && (
                 <div className="md:hidden absolute inset-0 bg-gray-900 z-10 flex flex-col">
-                     <div className="p-4 border-b border-gray-800 flex items-center bg-gray-900">
-                        <button onClick={() => setSelectedSession(null)} className="mr-3 text-gray-400">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+                     <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-gray-900">
+                        <div className="flex items-center">
+                            <button onClick={() => setSelectedSession(null)} className="mr-3 text-gray-400">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+                            </button>
+                            <h3 className="font-bold text-white truncate max-w-[150px]">
+                                {getPersonaDetails(selectedSession.personaId)?.title}
+                            </h3>
+                        </div>
+                        <button 
+                            onClick={handleDownload}
+                            className="text-gray-400 hover:text-white"
+                        >
+                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         </button>
-                        <h3 className="font-bold text-white flex-1 truncate">
-                             {getPersonaDetails(selectedSession.personaId)?.title}
-                        </h3>
                      </div>
                      <div className="flex-grow overflow-y-auto p-4 space-y-4">
                         {selectedSession.messages.map((msg, idx) => (

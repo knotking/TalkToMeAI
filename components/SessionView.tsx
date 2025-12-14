@@ -6,7 +6,7 @@ import TypingIndicator from './TypingIndicator';
 import Dropdown from './Dropdown'; // Import the new Dropdown component
 import { extractTextFromPdf } from '../utils/pdf';
 import { VOICES, LANGUAGES } from '../constants';
-import { saveSession, getPersonaPreference, savePersonaPreference } from '../utils/storage';
+import { saveSession, getPersonaPreference, savePersonaPreference, generateId } from '../utils/storage';
 
 interface SessionViewProps {
   persona: Persona;
@@ -97,7 +97,7 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const handleDisconnect = async () => {
     if (messages.length > 0) {
         const sessionLog: SessionLog = {
-            id: crypto.randomUUID(),
+            id: generateId(),
             personaId: persona.id,
             startTime: sessionStartTimeRef.current,
             endTime: Date.now(),
