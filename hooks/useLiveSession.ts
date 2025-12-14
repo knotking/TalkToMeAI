@@ -173,6 +173,11 @@ export const useLiveSession = ({
       processorRef.current.onaudioprocess = null;
     }
 
+    if (outputNodeRef.current) {
+        outputNodeRef.current.disconnect();
+        outputNodeRef.current = null;
+    }
+
     if (inputAudioContextRef.current) {
       await inputAudioContextRef.current.close();
       inputAudioContextRef.current = null;
@@ -217,11 +222,19 @@ export const useLiveSession = ({
       inputAudioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
       outputAudioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
 
+      // Setup Output Node (Gain -> Destination)
+      outputNodeRef.current = outputAudioContextRef.current.createGain();
+      outputNodeRef.current.gain.value = outputVolume;
+      outputNodeRef.current.connect(outputAudioContextRef.current.destination);
+
       // Setup Analysers for Visualization
       inputAnalyserRef.current = inputAudioContextRef.current.createAnalyser();
       outputAnalyserRef.current = outputAudioContextRef.current.createAnalyser();
       inputAnalyserRef.current.fftSize = 256;
       outputAnalyserRef.current.fftSize = 256;
+
+      // Connect Output Node to Analyser
+      outputNodeRef.current.connect(outputAnalyserRef.current);
 
       // Audio Constraints (Video handled in separate effect)
       const constraints = {
