@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Persona, SessionLog } from '../types';
 import { useLiveSession } from '../hooks/useLiveSession';
 import Visualizer from './Visualizer';
-import TypingIndicator from './TypingIndicator';
 import Dropdown from './Dropdown';
 import { extractTextFromPdf } from '../utils/pdf';
 import { VOICES, LANGUAGES } from '../constants';
@@ -86,7 +85,8 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
         if (isThinking) setIsThinking(false);
     } else {
         const timeSinceSpeech = now - lastVoiceActivityTime.current;
-        if (timeSinceSpeech > 500 && timeSinceSpeech < 3000 && isConnected) {
+        // If silence for > 800ms and connected, assume thinking/waiting
+        if (timeSinceSpeech > 800 && timeSinceSpeech < 5000 && isConnected) {
              if (!isThinking) setIsThinking(true);
         } else {
              if (isThinking) setIsThinking(false);
@@ -314,20 +314,38 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                             playsInline 
                             muted 
                         />
+                        
+                        {/* Video Analysis Overlay Effects */}
+                        {isThinking && isConnected && (
+                            <div className="absolute inset-0 pointer-events-none z-10">
+                                {/* Corner Reticles */}
+                                <div className="absolute top-8 left-8 w-12 h-12 border-t-2 border-l-2 border-white/30 rounded-tl-lg animate-pulse"></div>
+                                <div className="absolute top-8 right-8 w-12 h-12 border-t-2 border-r-2 border-white/30 rounded-tr-lg animate-pulse"></div>
+                                <div className="absolute bottom-8 left-8 w-12 h-12 border-b-2 border-l-2 border-white/30 rounded-bl-lg animate-pulse"></div>
+                                <div className="absolute bottom-8 right-8 w-12 h-12 border-b-2 border-r-2 border-white/30 rounded-br-lg animate-pulse"></div>
+                                
+                                {/* Vertical Scanline */}
+                                <div className="absolute top-0 left-0 w-full h-1 bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.2)] animate-scan"></div>
+                            </div>
+                        )}
+
                         {/* AI Vision Indicator */}
                         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-gray-600 flex items-center space-x-2 animate-fade-in">
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                            <span className="text-xs text-white font-medium tracking-wide">AI IS WATCHING</span>
+                            <div className={`w-2 h-2 rounded-full ${isThinking ? 'bg-blue-400 animate-ping' : 'bg-red-500 animate-pulse'}`}></div>
+                            <span className="text-xs text-white font-medium tracking-wide">
+                                {isThinking ? 'ANALYZING...' : 'AI IS WATCHING'}
+                            </span>
                         </div>
 
                         {/* AI Overlay on Video */}
                         <div className="absolute top-4 right-4 md:bottom-8 md:right-8 bg-gray-900/80 backdrop-blur-md rounded-2xl p-4 border border-gray-700/50 shadow-2xl flex flex-col items-center z-10 w-32 md:w-48 transition-all">
-                             <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
-                             {isThinking && (
-                                <div className="mt-2 scale-75">
-                                    <TypingIndicator />
-                                </div>
-                             )}
+                             <Visualizer 
+                                volume={volume.output} 
+                                isActive={isConnected} 
+                                isThinking={isThinking}
+                                isCameraActive={isCameraOn}
+                                color={persona.color} 
+                             />
                         </div>
                    </div>
               ) : (
@@ -335,21 +353,26 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                    <div className="flex flex-col items-center justify-center space-y-12 w-full max-w-4xl px-4 z-10">
                         {/* AI Avatar */}
                         <div className="relative group">
-                             <div className={`absolute -inset-4 bg-gradient-to-r ${persona.color} opacity-20 rounded-full blur-2xl group-hover:opacity-30 transition-opacity duration-500`}></div>
+                             <div className={`absolute -inset-4 bg-gradient-to-r ${persona.color} opacity-20 rounded-full blur-3xl group-hover:opacity-30 transition-opacity duration-500`}></div>
                              <div className="flex flex-col items-center space-y-6 relative">
                                 <div className="transform scale-150">
-                                    <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
-                                </div>
-                                
-                                <div className={`h-6 transition-all duration-300 ${isThinking ? 'opacity-100' : 'opacity-0'}`}>
-                                    <TypingIndicator />
+                                    <Visualizer 
+                                        volume={volume.output} 
+                                        isActive={isConnected} 
+                                        isThinking={isThinking}
+                                        color={persona.color} 
+                                    />
                                 </div>
                              </div>
                         </div>
 
                         {/* User Mic Visualizer */}
                         <div className="flex flex-col items-center space-y-2 opacity-60">
-                            <Visualizer volume={volume.input} isActive={isConnected} color="from-gray-500 to-gray-600" />
+                            <Visualizer 
+                                volume={volume.input} 
+                                isActive={isConnected} 
+                                color="from-gray-500 to-gray-600" 
+                            />
                             <span className="text-sm font-medium text-gray-400 tracking-widest uppercase text-xs">Listening</span>
                         </div>
                    </div>

@@ -244,12 +244,6 @@ export const useLiveSession = ({
       inputAnalyserRef.current.connect(processorRef.current);
       processorRef.current.connect(inputAudioContextRef.current.destination);
 
-      // Output Pipeline
-      outputNodeRef.current = outputAudioContextRef.current.createGain();
-      outputNodeRef.current.gain.value = outputVolume;
-      outputNodeRef.current.connect(outputAnalyserRef.current);
-      outputAnalyserRef.current.connect(outputAudioContextRef.current.destination);
-
       // Construct System Instruction
       let fullInstruction = systemInstruction;
       fullInstruction += `\n\nIMPORTANT: You must converse in ${language}.`;

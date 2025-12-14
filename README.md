@@ -1,4 +1,6 @@
-<img width="2752" height="1536" alt="unnamed (1)" src="https://github.com/user-attachments/assets/43738e7e-ac2b-4d2c-a54f-3ba99ab1b22f" />
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
 # Run and deploy your AI Studio app
 
