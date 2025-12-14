@@ -4,6 +4,19 @@
 
 Whether you need legal perspective on a contract, a fitness coach to check your form via camera, or a chef to help you cook dinner, TalktoMeAI provides a multimodal experience (Audio, Video, and Text) tailored to your needs.
 
+## 📹 Presentation
+
+Watch our deep dive overview (powered by NotebookLM) to see how TalktoMeAI is changing the conversation.
+
+[![TalktoMeAI Presentation](https://img.youtube.com/vi/YOUR_VIDEO_ID_HERE/maxresdefault.jpg)](https://youtu.be/YOUR_VIDEO_ID_HERE)
+
+**Deep Dive Chapters:**
+*   **00:00** - **Beyond the Textbox**: Moving from clunky turn-based chat to fluid, real-time conversation.
+*   **00:59** - **Meet Your AI Experts**: specialized personas including Lawyers, Interviewers, and Chefs.
+*   **02:25** - **A Truly Live Conversation**: How full-duplex audio makes it feel like a real phone call.
+*   **03:23** - **The Tech Behind the Magic**: Powered by Gemini 2.5 Live API and React 19.
+*   **04:02** - **Making It Your Own**: Customization, voice selection, and creating custom agents.
+
 ## 🚀 Key Features
 
 ### 🎭 Specialized Personas
