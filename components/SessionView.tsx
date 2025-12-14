@@ -4,6 +4,7 @@ import { useLiveSession } from '../hooks/useLiveSession';
 import Visualizer from './Visualizer';
 import Dropdown from './Dropdown';
 import { extractTextFromPdf } from '../utils/pdf';
+import { fileToBase64 } from '../utils/image';
 import { VOICES, LANGUAGES } from '../constants';
 import { saveSession, getPersonaPreference, savePersonaPreference, generateId } from '../utils/storage';
 
@@ -19,6 +20,10 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const [fileName, setFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [setupComplete, setSetupComplete] = useState<boolean>(false);
+  
+  // Chat Input State
+  const [chatInputText, setChatInputText] = useState('');
+  const [isChatOpenMobile, setIsChatOpenMobile] = useState(false);
   
   // Configuration State
   const [selectedVoice, setSelectedVoice] = useState<string>('Kore');
@@ -52,7 +57,7 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     }
   }, [persona.id]);
 
-  const { isConnected, status, volume, connect, disconnect, isError, messages } = useLiveSession({
+  const { isConnected, status, volume, connect, disconnect, sendText, sendImage, isError, messages } = useLiveSession({
     systemInstruction: customSystemInstruction,
     initialContext: fileContent,
     additionalContext: textInput,
@@ -145,6 +150,27 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
         setIsProcessing(false);
       }
     }
+  };
+
+  const handleSendMessage = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!chatInputText.trim()) return;
+    sendText(chatInputText);
+    setChatInputText('');
+  };
+
+  const handleChatImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          try {
+              const base64 = await fileToBase64(file);
+              sendImage(base64, file.type);
+          } catch (err) {
+              console.error("Failed to upload image", err);
+          }
+          // Reset input
+          e.target.value = '';
+      }
   };
 
 
@@ -279,6 +305,113 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     );
   }
 
+  // Content for the Sidebar (Chat + Transcript)
+  const renderSidebarContent = () => (
+      <div className="flex flex-col h-full">
+           <div className="p-4 border-b border-gray-800 font-semibold text-gray-400 text-xs uppercase tracking-wider flex justify-between items-center bg-gray-950">
+               <span>Transcript & Chat</span>
+               {fileName && <span className="text-[10px] bg-gray-800 px-2 py-1 rounded text-blue-300 truncate max-w-[100px]">{fileName}</span>}
+               {isChatOpenMobile && (
+                   <button onClick={() => setIsChatOpenMobile(false)} className="lg:hidden p-1 text-gray-400 hover:text-white">
+                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                   </button>
+               )}
+           </div>
+           
+           {/* Messages List */}
+           <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-950">
+               {messages.map((msg, idx) => (
+                   <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                       <div 
+                           className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm ${
+                               msg.role === 'user' 
+                               ? 'bg-blue-600 text-white rounded-br-none' 
+                               : 'bg-gray-800 text-gray-300 rounded-bl-none border border-gray-700'
+                           }`}
+                       >
+                           {/* Display Image if present */}
+                           {msg.image && (
+                               <img src={msg.image} alt="User Upload" className="mb-2 rounded-lg max-w-full h-auto border border-white/20" />
+                           )}
+                           
+                           {msg.text}
+                           
+                           {/* Grounding Sources (Search Results) */}
+                           {msg.groundingMetadata?.groundingChunks && msg.groundingMetadata.groundingChunks.length > 0 && (
+                              <div className="mt-3 pt-2 border-t border-gray-700/50">
+                                  <p className="text-[10px] uppercase text-gray-500 font-bold mb-1.5 flex items-center">
+                                      <span className="mr-1">🔎</span> Sources
+                                  </p>
+                                  <div className="space-y-1.5">
+                                      {msg.groundingMetadata.groundingChunks.map((chunk, i) => {
+                                          if (chunk.web) {
+                                              return (
+                                                  <a 
+                                                      key={i}
+                                                      href={chunk.web.uri}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="block bg-gray-900/50 hover:bg-gray-700 p-2 rounded-lg text-xs transition-colors border border-gray-700/50"
+                                                  >
+                                                      <div className="font-medium text-blue-300 truncate">{chunk.web.title}</div>
+                                                      <div className="text-[10px] text-gray-500 truncate opacity-70">{new URL(chunk.web.uri).hostname}</div>
+                                                  </a>
+                                              );
+                                          }
+                                          if (chunk.maps) {
+                                              return (
+                                                   <a 
+                                                      key={i}
+                                                      href={chunk.maps.uri}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="block bg-gray-900/50 hover:bg-gray-700 p-2 rounded-lg text-xs transition-colors border border-gray-700/50"
+                                                  >
+                                                      <div className="font-medium text-green-300 truncate flex items-center">
+                                                          <span className="mr-1">📍</span> {chunk.maps.title}
+                                                      </div>
+                                                  </a>
+                                              );
+                                          }
+                                          return null;
+                                      })}
+                                  </div>
+                              </div>
+                           )}
+                       </div>
+                       <span className="text-[10px] text-gray-500 mt-1">
+                           {msg.role === 'user' ? 'You' : persona.title}
+                       </span>
+                   </div>
+               ))}
+           </div>
+
+           {/* Input Area */}
+           <div className="p-3 bg-gray-900 border-t border-gray-800">
+               <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                   <label className="cursor-pointer p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-800" title="Send Image">
+                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                       <input type="file" className="hidden" accept="image/*" onChange={handleChatImageUpload} />
+                   </label>
+                   <input 
+                       type="text" 
+                       value={chatInputText}
+                       onChange={(e) => setChatInputText(e.target.value)}
+                       placeholder="Message..."
+                       className="flex-grow bg-gray-800 border border-gray-700 text-white text-sm rounded-full px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                   />
+                   <button 
+                        type="submit" 
+                        disabled={!chatInputText.trim()}
+                        className={`p-2 rounded-full transition-colors ${chatInputText.trim() ? 'text-blue-400 hover:text-blue-300 hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'}`}
+                   >
+                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                   </button>
+               </form>
+           </div>
+      </div>
+  );
+
   // Active Session Layout
   return (
     <div className="flex flex-col h-full relative bg-gray-900">
@@ -387,31 +520,17 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
               )}
            </div>
 
-           {/* Transcript Sidebar (Hidden on mobile unless toggled, handled via simple responsive width for now) */}
-           <div className="hidden lg:flex w-80 bg-gray-950 border-l border-gray-800 flex-col z-20">
-               <div className="p-4 border-b border-gray-800 font-semibold text-gray-400 text-xs uppercase tracking-wider flex justify-between items-center">
-                   <span>Transcript</span>
-                   {fileName && <span className="text-[10px] bg-gray-800 px-2 py-1 rounded text-blue-300 truncate max-w-[100px]">{fileName}</span>}
-               </div>
-               <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4">
-                   {messages.map((msg, idx) => (
-                       <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                           <div 
-                               className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm ${
-                                   msg.role === 'user' 
-                                   ? 'bg-blue-600 text-white rounded-br-none' 
-                                   : 'bg-gray-800 text-gray-300 rounded-bl-none border border-gray-700'
-                               }`}
-                           >
-                               {msg.text}
-                           </div>
-                           <span className="text-[10px] text-gray-500 mt-1">
-                               {msg.role === 'user' ? 'You' : persona.title}
-                           </span>
-                       </div>
-                   ))}
-               </div>
+           {/* Transcript Sidebar (Desktop) */}
+           <div className="hidden lg:flex w-96 bg-gray-950 border-l border-gray-800 flex-col z-20">
+               {renderSidebarContent()}
            </div>
+
+           {/* Mobile Transcript Overlay */}
+           {isChatOpenMobile && (
+               <div className="lg:hidden absolute inset-0 z-40 bg-gray-950 animate-fade-in flex flex-col">
+                   {renderSidebarContent()}
+               </div>
+           )}
        </div>
 
        {/* Control Bar (Bottom) */}
@@ -442,6 +561,15 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
 
               {/* Main Controls */}
               <div className="flex items-center justify-center space-x-4 flex-grow md:flex-grow-0">
+                   {/* Mobile Chat Toggle */}
+                   <button 
+                       onClick={() => setIsChatOpenMobile(true)}
+                       className="lg:hidden p-4 rounded-full bg-gray-800 text-white hover:bg-gray-700 shadow-lg"
+                       title="Open Chat"
+                   >
+                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                   </button>
+
                    <button 
                         onClick={() => setIsCameraOn(!isCameraOn)}
                         className={`p-4 rounded-full transition-all duration-300 shadow-lg ${isCameraOn ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}

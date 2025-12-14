@@ -32,11 +32,31 @@ export interface AudioVolumeState {
   output: number;
 }
 
+export interface GroundingChunk {
+  web?: {
+    uri: string;
+    title: string;
+  };
+  maps?: {
+    uri: string;
+    title: string;
+  };
+}
+
+export interface GroundingMetadata {
+  groundingChunks?: GroundingChunk[];
+  searchEntryPoint?: {
+    renderedContent?: string;
+  };
+}
+
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
+  image?: string; // Base64 data url for display
   timestamp: number;
   isFinal?: boolean;
+  groundingMetadata?: GroundingMetadata;
 }
 
 export interface SessionLog {

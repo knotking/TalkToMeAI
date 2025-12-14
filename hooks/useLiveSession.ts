@@ -3,7 +3,7 @@ import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { GEMINI_MODEL } from '../constants';
 import { createPcmBlob, decodeAudioData, base64ToUint8Array } from '../utils/audio';
 import { captureFrameAsBase64 } from '../utils/image';
-import { ChatMessage } from '../types';
+import { ChatMessage, GroundingMetadata } from '../types';
 
 interface UseLiveSessionProps {
   systemInstruction: string;
@@ -205,6 +205,32 @@ export const useLiveSession = ({
     setVolume({ input: 0, output: 0 });
   }, []);
 
+  const sendText = useCallback((text: string) => {
+      if (sessionPromiseRef.current) {
+          sessionPromiseRef.current.then(session => {
+              session.send({ parts: [{ text }], turnComplete: true });
+          });
+          // Optimistically add to messages
+          setMessages(prev => [...prev, { role: 'user', text, timestamp: Date.now(), isFinal: true }]);
+      }
+  }, []);
+
+  const sendImage = useCallback((base64: string, mimeType: string) => {
+      if (sessionPromiseRef.current) {
+          sessionPromiseRef.current.then(session => {
+              session.send({ parts: [{ inlineData: { mimeType, data: base64 } }], turnComplete: true });
+          });
+           // Optimistically add to messages
+           setMessages(prev => [...prev, { 
+               role: 'user', 
+               text: 'Sent an image', 
+               image: `data:${mimeType};base64,${base64}`,
+               timestamp: Date.now(), 
+               isFinal: true 
+            }]);
+      }
+  }, []);
+
   const connect = useCallback(async () => {
     try {
       setStatus('Connecting...');
@@ -282,6 +308,11 @@ export const useLiveSession = ({
           // Enable transcription
           inputAudioTranscription: { },
           outputAudioTranscription: { },
+          // Enable Grounding Tools
+          tools: [
+            { googleSearch: {} },
+            { googleMaps: {} }
+          ],
         },
         callbacks: {
           onopen: () => {
@@ -328,6 +359,28 @@ export const useLiveSession = ({
                     nextStartTimeRef.current += audioBuffer.duration;
                 } catch (e) {
                     console.error("Error decoding audio", e);
+                }
+            }
+
+            // Handle Grounding Metadata
+            // It might appear in the parts of the model turn
+            const parts = message.serverContent?.modelTurn?.parts;
+            if (parts) {
+                for (const part of parts) {
+                    if ((part as any).groundingMetadata) {
+                        setMessages(prev => {
+                            const lastMsg = prev[prev.length - 1];
+                            if (lastMsg && lastMsg.role === 'model') {
+                                // Update existing message with grounding metadata
+                                return prev.map((msg, idx) => 
+                                    idx === prev.length - 1 
+                                        ? { ...msg, groundingMetadata: (part as any).groundingMetadata } 
+                                        : msg
+                                );
+                            }
+                            return prev;
+                        });
+                    }
                 }
             }
 
@@ -459,6 +512,8 @@ export const useLiveSession = ({
     volume,
     connect,
     disconnect,
+    sendText,
+    sendImage,
     messages
   };
 };

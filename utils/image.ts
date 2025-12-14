@@ -24,3 +24,22 @@ export function captureFrameAsBase64(video: HTMLVideoElement, canvas: HTMLCanvas
   // Remove prefix to get raw base64
   return dataUrl.split(',')[1];
 }
+
+/**
+ * Converts a File object to a base64 string.
+ * @param file The image file
+ * @returns Promise resolving to base64 string (without data URI prefix)
+ */
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        const result = reader.result as string;
+        // remove data:image/xxx;base64, prefix
+        const base64 = result.split(',')[1];
+        resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+}
