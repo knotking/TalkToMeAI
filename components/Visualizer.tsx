@@ -36,46 +36,53 @@ const Visualizer: React.FC<VisualizerProps> = ({ volume, isActive, isThinking = 
 
       {/* 3. Camera Analysis Ripple (Only if thinking + camera) */}
       {isThinking && isCameraActive && (
-         <div className="absolute inset-2 border border-blue-400/40 rounded-full animate-pulse-ring"></div>
+         <div className="absolute inset-0 border-2 border-blue-400/50 rounded-full animate-pulse-ring z-0"></div>
       )}
 
       {/* 4. Core Circle */}
-      <div className={`relative z-10 w-24 h-24 rounded-full bg-gradient-to-br shadow-2xl flex items-center justify-center transition-all duration-500
+      <div className={`relative z-10 w-24 h-24 rounded-full bg-gradient-to-br shadow-2xl flex items-center justify-center transition-all duration-500 overflow-hidden
           ${isThinking ? 'scale-90 brightness-110 shadow-inner' : ''}
           ${baseColorClass}
         `}
         style={{ transform: !isThinking ? `scale(${isActive ? 1 + normalizedVol * 0.15 : 1})` : undefined }}
       >
-        {isActive ? (
-           <div className="flex items-center justify-center h-8 w-12 overflow-hidden">
-             {isThinking ? (
-               // Thinking State: Subtle dots animation
-               <div className="flex space-x-1.5">
-                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
-               </div>
-             ) : (
-               // Talking/Listening State: Wave bars
-                <div className="flex space-x-1 items-end h-full">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                      <div 
-                        key={i} 
-                        className="w-1 bg-white/90 rounded-full transition-all duration-75"
-                        style={{ 
-                          height: `${Math.max(15, Math.min(100, Math.random() * 120 * normalizedVol))}%`,
-                        }}
-                      />
-                  ))}
-                </div>
-             )}
-           </div>
-        ) : (
-            // Inactive State
-            <div className="text-3xl text-white/80">
-                🎙️
-            </div>
+        {/* Shimmer Overlay during thinking */}
+        {isThinking && (
+            <div className="absolute inset-0 animate-shimmer z-0 pointer-events-none"></div>
         )}
+
+        <div className="relative z-10">
+          {isActive ? (
+             <div className="flex items-center justify-center h-8 w-12 overflow-hidden">
+               {isThinking ? (
+                 // Thinking State: Subtle dots animation
+                 <div className="flex space-x-1.5">
+                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                   <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
+                 </div>
+               ) : (
+                 // Talking/Listening State: Wave bars
+                  <div className="flex space-x-1 items-end h-full">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div 
+                          key={i} 
+                          className="w-1 bg-white/90 rounded-full transition-all duration-75"
+                          style={{ 
+                            height: `${Math.max(15, Math.min(100, Math.random() * 120 * normalizedVol))}%`,
+                          }}
+                        />
+                    ))}
+                  </div>
+               )}
+             </div>
+          ) : (
+              // Inactive State
+              <div className="text-3xl text-white/80">
+                  🎙️
+              </div>
+          )}
+        </div>
       </div>
     </div>
   );
