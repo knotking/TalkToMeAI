@@ -1,8 +1,8 @@
 # TalktoMeAI
 
-**TalktoMeAI** is a cutting-edge web application that transforms standard AI interactions into immersive, real-time voice conversations. Powered by Google's **Gemini 2.5 Live API**, it enables users to speak naturally with specialized AI personas that listen, think, and respond with human-like intonation and sub-second latency.
+**TalktoMeAI** is a cutting-edge web application that transforms standard AI interactions into immersive, real-time voice and video conversations. Powered by Google's **Gemini 2.5 Live API**, it enables users to speak naturally with specialized AI personas that listen, think, see, and respond with human-like intonation and sub-second latency.
 
-Whether you need legal perspective on a contract, a fitness coach to motivate your workout, or a chef to help you cook dinner using your camera, TalktoMeAI provides a multimodal experience (Audio, Video, and Text) tailored to your needs.
+Whether you need legal perspective on a contract, a fitness coach to check your form via camera, or a chef to help you cook dinner, TalktoMeAI provides a multimodal experience (Audio, Video, and Text) tailored to your needs.
 
 ## 🚀 Key Features
 
@@ -29,7 +29,10 @@ Choose from a diverse range of expert agents, each pre-configured with unique sy
 
 ### ⚡ Real-Time Interaction
 *   **Bidirectional Audio**: True full-duplex communication allowing for natural interruptions and pacing.
-*   **Video & Vision**: Capabilities to stream video frames to the model, allowing personas like the Chef and Handyman to "see" your environment.
+*   **Video Conferencing & Vision**:
+    *   **Dynamic Camera Toggle**: Enable your camera at any time during a session to switch to a video call interface.
+    *   **AI Vision**: The AI can "see" you and your surroundings in real-time, allowing for visual feedback on posture, expressions, or objects you show it.
+    *   **Specialized Vision Personas**: Pre-configured personas like the Chef and Handyman utilize this by default to provide visual guidance.
 *   **Volume Control**: Integrated input (Microphone) and output (Speaker) gain controls to adjust audio levels on the fly.
 *   **Reactive Visualizers**: Dynamic audio visualizations that respond to voice activity for both the user and the AI.
 
@@ -71,7 +74,7 @@ This project is built as a showcase of the Gemini 2.5 Live API capabilities.
 1.  **API Key**: This application requires a valid Google GenAI API Key with access to the Gemini 2.5 Live API. The key is injected via `process.env.API_KEY`.
 2.  **Hardware Permissions**:
     *   **Microphone**: Required for all personas.
-    *   **Camera**: Specifically required for "Vision" personas (Chef, Handyman, etc.).
+    *   **Camera**: Required for video conferencing features and vision-enabled personas (Chef, Handyman, etc.).
 
 ---
 *Powered by Gemini 2.5 Flash Native Audio*

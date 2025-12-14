@@ -253,6 +253,7 @@ export const useLiveSession = ({
       // Construct System Instruction
       let fullInstruction = systemInstruction;
       fullInstruction += `\n\nIMPORTANT: You must converse in ${language}.`;
+      fullInstruction += `\n\nSYSTEM NOTE: You have access to a real-time video feed from the user's camera. You can see the user and their environment. If the user asks for feedback on something visual (like their posture, an object, or their facial expression) or if visual context is helpful, use this video feed to provide specific, observant feedback.`;
       
       if (initialContext) {
         fullInstruction += `\n\n[USER PROVIDED DOCUMENT]:\n${initialContext}\n\n[END OF DOCUMENT]`;

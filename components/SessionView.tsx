@@ -314,6 +314,12 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                             playsInline 
                             muted 
                         />
+                        {/* AI Vision Indicator */}
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-gray-600 flex items-center space-x-2 animate-fade-in">
+                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                            <span className="text-xs text-white font-medium tracking-wide">AI IS WATCHING</span>
+                        </div>
+
                         {/* AI Overlay on Video */}
                         <div className="absolute top-4 right-4 md:bottom-8 md:right-8 bg-gray-900/80 backdrop-blur-md rounded-2xl p-4 border border-gray-700/50 shadow-2xl flex flex-col items-center z-10 w-32 md:w-48 transition-all">
                              <Visualizer volume={volume.output} isActive={isConnected} color={persona.color} />
