@@ -12,6 +12,8 @@ interface UseLiveSessionProps {
   voiceName: string;
   language: string;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
+  inputVolume?: number;
+  outputVolume?: number;
 }
 
 export const useLiveSession = ({ 
@@ -20,7 +22,9 @@ export const useLiveSession = ({
   additionalContext,
   voiceName, 
   language,
-  videoRef 
+  videoRef,
+  inputVolume = 1.0,
+  outputVolume = 1.0,
 }: UseLiveSessionProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -32,6 +36,7 @@ export const useLiveSession = ({
   const inputAudioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
   const inputSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const inputGainRef = useRef<GainNode | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const outputNodeRef = useRef<GainNode | null>(null);
   const inputAnalyserRef = useRef<AnalyserNode | null>(null);
@@ -48,6 +53,19 @@ export const useLiveSession = ({
   // Session Management
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const clientRef = useRef<GoogleGenAI | null>(null);
+
+  // Apply Volume Changes dynamically
+  useEffect(() => {
+    if (inputGainRef.current && inputAudioContextRef.current) {
+        inputGainRef.current.gain.setTargetAtTime(inputVolume, inputAudioContextRef.current.currentTime, 0.1);
+    }
+  }, [inputVolume]);
+
+  useEffect(() => {
+    if (outputNodeRef.current && outputAudioContextRef.current) {
+        outputNodeRef.current.gain.setTargetAtTime(outputVolume, outputAudioContextRef.current.currentTime, 0.1);
+    }
+  }, [outputVolume]);
   
   const disconnect = useCallback(async () => {
     // Stop video capture
@@ -63,6 +81,10 @@ export const useLiveSession = ({
       inputSourceRef.current.disconnect();
     }
     
+    if (inputGainRef.current) {
+        inputGainRef.current.disconnect();
+    }
+
     if (videoRef?.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach(track => track.stop());
@@ -145,14 +167,19 @@ export const useLiveSession = ({
 
       // Input Pipeline (Audio)
       inputSourceRef.current = inputAudioContextRef.current.createMediaStreamSource(stream);
+      inputGainRef.current = inputAudioContextRef.current.createGain();
+      inputGainRef.current.gain.value = inputVolume;
+
       processorRef.current = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
       
-      inputSourceRef.current.connect(inputAnalyserRef.current);
+      inputSourceRef.current.connect(inputGainRef.current);
+      inputGainRef.current.connect(inputAnalyserRef.current);
       inputAnalyserRef.current.connect(processorRef.current);
       processorRef.current.connect(inputAudioContextRef.current.destination);
 
       // Output Pipeline
       outputNodeRef.current = outputAudioContextRef.current.createGain();
+      outputNodeRef.current.gain.value = outputVolume;
       outputNodeRef.current.connect(outputAnalyserRef.current);
       outputAnalyserRef.current.connect(outputAudioContextRef.current.destination);
 
@@ -327,7 +354,7 @@ export const useLiveSession = ({
       setStatus('Failed to Connect');
       disconnect();
     }
-  }, [systemInstruction, initialContext, additionalContext, voiceName, language, videoRef, disconnect]);
+  }, [systemInstruction, initialContext, additionalContext, voiceName, language, videoRef, disconnect, inputVolume, outputVolume]);
 
   useEffect(() => {
     let animFrame: number;

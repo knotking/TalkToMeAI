@@ -7,6 +7,9 @@ export enum PersonaId {
   TEACHER = 'teacher',
   HANDYMAN = 'handyman',
   DATING_COACH = 'dating_coach',
+  CHEF = 'chef',
+  FITNESS = 'fitness',
+  TRAVEL = 'travel',
   CUSTOM = 'custom',
 }
 

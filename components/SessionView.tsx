@@ -25,6 +25,10 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
   const [selectedVoice, setSelectedVoice] = useState<string>('Kore');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
+  // Volume State
+  const [micVolume, setMicVolume] = useState<number>(1.0);
+  const [speakerVolume, setSpeakerVolume] = useState<number>(1.0);
+
   // UI State for Thinking Indicator
   const [isThinking, setIsThinking] = useState(false);
   const lastVoiceActivityTime = useRef<number>(0);
@@ -55,6 +59,8 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
     voiceName: selectedVoice,
     language: selectedLanguage,
     videoRef: persona.requiresCamera ? videoRef : undefined,
+    inputVolume: micVolume,
+    outputVolume: speakerVolume,
   });
 
   // Scroll chat to bottom on new message
@@ -294,9 +300,9 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
        <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
            
            {/* Visualizer Area */}
-           <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-8 bg-gray-900 overflow-y-auto">
-              <div className="text-center space-y-4">
-                 <div className={`inline-block p-4 rounded-full bg-gray-800/50 backdrop-blur border border-gray-700 mb-4`}>
+           <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-4 bg-gray-900 overflow-y-auto">
+              <div className="text-center space-y-2">
+                 <div className={`inline-block p-4 rounded-full bg-gray-800/50 backdrop-blur border border-gray-700 mb-2`}>
                     <span className="text-5xl md:text-6xl">{persona.icon}</span>
                  </div>
                  <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{persona.title}</h2>
@@ -353,6 +359,38 @@ const SessionView: React.FC<SessionViewProps> = ({ persona, onBack }) => {
                     <div className={`absolute -bottom-14 transition-all duration-500 transform ${isThinking ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
                         <TypingIndicator />
                     </div>
+                 </div>
+              </div>
+
+              {/* Volume Controls */}
+              <div className="w-full max-w-sm bg-gray-800/40 rounded-xl p-3 border border-gray-700/50 backdrop-blur-sm mt-4">
+                 <div className="grid grid-cols-2 gap-4">
+                     {/* Input Volume */}
+                     <div className="flex flex-col space-y-1">
+                         <div className="flex items-center justify-between text-xs text-gray-400">
+                             <div className="flex items-center"><span className="mr-1">🎤</span> Input</div>
+                             <span>{Math.round(micVolume * 100)}%</span>
+                         </div>
+                         <input 
+                            type="range" min="0" max="2" step="0.1" 
+                            value={micVolume}
+                            onChange={(e) => setMicVolume(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                         />
+                     </div>
+                     {/* Output Volume */}
+                     <div className="flex flex-col space-y-1">
+                         <div className="flex items-center justify-between text-xs text-gray-400">
+                            <div className="flex items-center"><span className="mr-1">🔊</span> Output</div>
+                             <span>{Math.round(speakerVolume * 100)}%</span>
+                         </div>
+                         <input 
+                            type="range" min="0" max="2" step="0.1" 
+                            value={speakerVolume}
+                            onChange={(e) => setSpeakerVolume(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
+                         />
+                     </div>
                  </div>
               </div>
 

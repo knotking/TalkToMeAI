@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PERSONAS } from './constants';
 import SessionView from './components/SessionView';
 import HistoryModal from './components/HistoryModal';
+import AboutModal from './components/AboutModal';
 import Dropdown from './components/Dropdown';
 import { Persona } from './types';
 
@@ -9,6 +10,7 @@ const App: React.FC = () => {
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [previewPersonaId, setPreviewPersonaId] = useState<string>(PERSONAS[0].id);
   const [showHistory, setShowHistory] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const previewPersona = PERSONAS.find(p => p.id === previewPersonaId) || PERSONAS[0];
   const personaOptions = PERSONAS.map(p => ({ value: p.id, label: p.title }));
@@ -22,14 +24,24 @@ const App: React.FC = () => {
         />
       ) : (
         <div className="container mx-auto px-4 py-12 max-w-4xl relative min-h-screen flex flex-col justify-center">
-          {/* History Button */}
-          <button 
-            onClick={() => setShowHistory(true)}
-            className="absolute top-4 right-4 md:top-8 md:right-8 flex items-center space-x-2 text-gray-400 hover:text-white transition-colors bg-gray-800/50 hover:bg-gray-800 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700 z-10"
-          >
-             <span className="text-xl">📜</span>
-             <span className="hidden md:inline font-medium">History</span>
-          </button>
+          
+          {/* Top Right Action Buttons */}
+          <div className="absolute top-4 right-4 md:top-8 md:right-8 flex space-x-3 z-10">
+            <button 
+                onClick={() => setShowAbout(true)}
+                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors bg-gray-800/50 hover:bg-gray-800 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700"
+            >
+                <span className="text-xl">ℹ️</span>
+                <span className="hidden md:inline font-medium">About</span>
+            </button>
+            <button 
+                onClick={() => setShowHistory(true)}
+                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors bg-gray-800/50 hover:bg-gray-800 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-700"
+            >
+                <span className="text-xl">📜</span>
+                <span className="hidden md:inline font-medium">History</span>
+            </button>
+          </div>
 
           <header className="text-center mb-12 space-y-4">
             <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg mb-4 animate-float">
@@ -95,6 +107,7 @@ const App: React.FC = () => {
           </footer>
 
           {showHistory && <HistoryModal onClose={() => setShowHistory(false)} />}
+          {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
         </div>
       )}
     </div>
