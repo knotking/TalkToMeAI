@@ -1,5 +1,7 @@
 # TalktoMeAI
 
+![TalktoMeAI Overview](banner.jpg)
+
 **TalktoMeAI** is a cutting-edge web application that transforms standard AI interactions into immersive, real-time voice and video conversations. Powered by Google's **Gemini 2.5 Live API**, it enables users to speak naturally with specialized AI personas that listen, think, see, and respond with human-like intonation and sub-second latency.
 
 Whether you need legal perspective on a contract, a fitness coach to check your form via camera, or a chef to help you cook dinner, TalktoMeAI provides a multimodal experience (Audio, Video, and Text) tailored to your needs.
