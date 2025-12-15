@@ -4,6 +4,9 @@ TalkToMeAI is a real-time multimodal conversation application that allows you to
 
 Whether you need legal perspective, interview practice, culinary advice, or spiritual guidance, TalkToMeAI provides an immersive, voice-first experience with "eyes and ears."
 
+<img width="2752" height="1536" alt="unnamed (1)" src="https://github.com/user-attachments/assets/8e6d35d8-661a-4ca3-a037-774cf327391c" />
+
+
 ## ✨ Key Features
 
 - **🗣️ Real-time Voice Conversations:** Talk naturally with the AI with ultra-low latency. The AI listens, interrupts when needed, and responds instantly.
