@@ -22,18 +22,21 @@ Whether you need legal perspective, interview practice, culinary advice, or spir
 
 ## 🚀 Getting Started
 
-### Prerequisites
+You can run TalkToMeAI as either a mobile app or a web application.
 
-- **Node.js** (v18 or higher)
-- **Google Cloud Project** with Gemini API access
-- **Gemini API Key** (Get one at [Google AI Studio](https://aistudio.google.com/))
+### 📱 Mobile App (Expo / React Native)
 
-### Installation
+The mobile version is located in the `app/` directory.
 
-1. **Clone the repository:**
+#### Prerequisites
+- Node.js (v18+)
+- Expo Go app on your phone (iOS/Android) or a Simulator/Emulator.
+
+#### Setup
+
+1. **Navigate to the app directory:**
    ```bash
-   git clone https://github.com/yourusername/TalkToMeAI.git
-   cd TalkToMeAI
+   cd app
    ```
 
 2. **Install dependencies:**
@@ -42,32 +45,57 @@ Whether you need legal perspective, interview practice, culinary advice, or spir
    ```
 
 3. **Configure Environment:**
-   Create a `.env.local` file in the root directory and add your API key:
+   Create a `.env` file (or use `app.json` config if preferred for Expo Go, but `react-native-dotenv` is configured) or ensure your `EXPO_PUBLIC_GEMINI_API_KEY` is set.
+   
+   *For Expo Go, the safest way to test quickly is to add it to your `.env` file:*
+   ```env
+   EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+4. **Run the app:**
+   ```bash
+   npx expo start
+   ```
+   - Scan the QR code with your phone (Android) or Camera (iOS).
+   - Or press `i` for iOS Simulator, `a` for Android Emulator.
+
+### 🌐 Web Application
+
+The web version is located in the root directory.
+
+#### Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Configure Environment:**
+   Create a `.env.local` file in the root directory:
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
-4. **Run the development server:**
+3. **Run the development server:**
    ```bash
    npm run dev
    ```
 
-5. **Open in Browser:**
-   Navigate to `http://localhost:5173` to start using the app.
+4. **Open in Browser:**
+   Navigate to `http://localhost:5173`.
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React 19, TypeScript, Vite
-- **Styling:** Tailwind CSS
-- **AI/ML:** Google GenAI SDK (`@google/genai`) - Gemini 2.5 Live API
-- **Audio/Video:** Web Audio API, MediaStream API (Camera/Microphone)
+- **Mobile:** React Native, Expo, NativeWind, Expo AV, Expo Camera.
+- **Web:** React 19, TypeScript, Vite, Tailwind CSS.
+- **AI/ML:** Google GenAI SDK (`@google/genai`) - Gemini 2.5 Live API.
+- **Audio/Video:** Web Audio API (Web), Expo AV (Mobile).
 
 ## 📖 How It Works
 
 1. **Select a Persona:** Choose an expert agent from the dropdown.
 2. **Provide Context (Optional):**
-   - Upload a relevant document (e.g., PDF contract).
-   - Enter specific text details (e.g., property address).
+   - Upload a relevant document (Web only currently).
    - Enable your camera if the persona requires visual input.
 3. **Connect:** Click "Start Session" to establish a WebSocket connection with the Gemini Live API.
 4. **Interact:** Speak naturally. The application captures your audio (and video frames if enabled), sends them to the model, and plays back the generated audio response in real-time.

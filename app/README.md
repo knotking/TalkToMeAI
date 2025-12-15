@@ -1,50 +1,50 @@
-# Welcome to your Expo app 👋
+# TalkToMeAI - Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is the mobile version of TalkToMeAI, built with **React Native** and **Expo**.
 
-## Get started
+## 🚀 Getting Started
 
-1. Install dependencies
+### Prerequisites
 
+- **Node.js** (v18 or higher)
+- **Expo Go** app installed on your physical device (iOS/Android) OR an Android Emulator / iOS Simulator.
+
+### Installation
+
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. Start the app
+2. **Environment Setup:**
+   Create a `.env` file in this directory (`app/`) with your Gemini API Key:
+   ```env
+   EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   ```
 
+3. **Run the App:**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Connect:**
+   - **Physical Device:** Scan the QR code with your phone's camera (iOS) or the Expo Go app (Android).
+   - **Simulator:** Press `i` to open in iOS Simulator.
+   - **Emulator:** Press `a` to open in Android Emulator.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📱 Features
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Real-time Voice:** Talk to the AI personalities with low latency.
+- **Visual Context:** Grant camera permissions to let the AI "see" your world (e.g., show ingredients to the Chef persona).
+- **Personas:** Switch between Lawyer, Chef, Psychologist, and more.
 
-## Get a fresh project
+## 🛠️ Tech Stack
 
-When you're ready, run:
+- **Framework:** Expo (React Native)
+- **Routing:** Expo Router
+- **Styling:** NativeWind (Tailwind CSS)
+- **AI:** Google GenAI SDK
+- **Audio:** Expo AV
+- **Camera:** Expo Camera
 
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+For full project details, see the [Root README](../README.md).
